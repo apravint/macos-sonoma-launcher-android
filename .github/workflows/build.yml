@@ -1,0 +1,17 @@
+name: Omarchy Launcher Android Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Web & Android assets
+        run: |
+          ls -la web/index.html
+          ls -la android/app/src/main/AndroidManifest.xml

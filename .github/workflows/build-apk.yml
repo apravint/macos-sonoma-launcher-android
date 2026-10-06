@@ -1,0 +1,110 @@
+name: Build & Release macOS Sonoma Android Launcher APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Native macOS Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Compile Native MacOSSonomaLauncher.apk
+        run: |
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/34.0.0"
+          PLATFORM="$ANDROID_HOME/platforms/android-34/android.jar"
+          
+          mkdir -p build/gen build/obj build/apk_assets/assets/web
+          cp -r web/* build/apk_assets/assets/web/
+          
+          # 1. AAPT Generate R.java
+          $BUILD_TOOLS/aapt package -f -m \
+            -J build/gen \
+            -M android/app/src/main/AndroidManifest.xml \
+            -S android/app/src/main/res \
+            -I $PLATFORM
+            
+          # 2. Javac Compile Java Classes
+          javac -d build/obj \
+            -classpath $PLATFORM \
+            build/gen/com/apravint/omarchylauncher/R.java \
+            android/app/src/main/java/com/apravint/omarchylauncher/MainActivity.java
+            
+          # 3. D8 Dexing with Min API 24
+          $BUILD_TOOLS/d8 --min-api 24 --output build/ \
+            build/obj/com/apravint/omarchylauncher/*.class
+            
+          # 4. Package Unsigned APK
+          $BUILD_TOOLS/aapt package -f \
+            -M android/app/src/main/AndroidManifest.xml \
+            -S android/app/src/main/res \
+            -I $PLATFORM \
+            -F MacOSSonomaLauncher-raw.apk build/apk_assets
+            
+          # 5. Add classes.dex to APK
+          cd build
+          $BUILD_TOOLS/aapt add ../MacOSSonomaLauncher-raw.apk classes.dex
+          cd ..
+          
+          # 6. 4-Byte ZipAlign
+          $BUILD_TOOLS/zipalign -v 4 MacOSSonomaLauncher-raw.apk MacOSSonomaLauncher-aligned.apk
+          
+          # 7. Keystore Generation & V1/V2/V3 Signature Scheme Signing
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          $BUILD_TOOLS/apksigner sign \
+            --ks debug.keystore \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out MacOSSonomaLauncher.apk \
+            MacOSSonomaLauncher-aligned.apk
+          
+          echo "✔ Successfully ZipAligned & V2/V3 Signed MacOSSonomaLauncher.apk!"
+          ls -lh MacOSSonomaLauncher.apk
+
+      - name: Upload APK Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacOSSonomaLauncher-APK
+          path: MacOSSonomaLauncher.apk
+
+      - name: Create GitHub Release with APK Asset
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.0"
+          name: "macOS Sonoma Launcher for Android v1.0.0"
+          body: |
+            ##  macOS Sonoma Android Launcher v1.0.0
+            
+            ### ✨ Features:
+            -  **macOS Sonoma Top Menu Bar**: Status clock, battery, WiFi indicator, and Apple Menu logo (``).
+            - 🖥️ **Glassmorphic Floating Dock**: macOS-style bottom app dock.
+            - 🚀 **macOS Launchpad Overlay**: Fullscreen Launchpad app grid view with search bar.
+            - 📲 **Real App Scanner & Tap-to-Launch**: Dynamically detects all real installed Android apps.
+            - ⚡ **ZipAligned & V1/V2/V3 Signed**: Compatible with Motorola Edge, Pixel, Samsung, Xiaomi, and Android 14/15 phones.
+
+            Download `MacOSSonomaLauncher.apk` below and install directly on your device!
+          files: |
+            MacOSSonomaLauncher.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

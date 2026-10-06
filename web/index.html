@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>macOS Sonoma Launcher for Android</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top macOS Menu Bar -->
+  <div class="macos-menu-bar">
+    <div class="menu-left">
+      <span class="apple-logo" onclick="toggleAppleMenu()"></span>
+      <span class="active-app-name" id="menu-active-app">Finder</span>
+      <span class="menu-item">File</span>
+      <span class="menu-item">Edit</span>
+      <span class="menu-item">View</span>
+      <span class="menu-item">Window</span>
+    </div>
+    <div class="menu-right">
+      <span class="menu-status-icon" id="battery-status">🔋 85%</span>
+      <span class="menu-status-icon">📶</span>
+      <span class="menu-status-icon" onclick="toggleControlCenter()">🎛️</span>
+      <span class="menu-clock" id="menu-clock">12:00 PM</span>
+    </div>
+  </div>
+
+  <!-- Apple Menu Flyout Dropdown -->
+  <div class="apple-menu-dropdown" id="apple-menu">
+    <div class="dropdown-item" onclick="openSystemSettings()">About This Android...</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="openSystemSettings()">System Settings...</div>
+    <div class="dropdown-item" onclick="setDefaultHomeLauncher()">Set as Default Launcher</div>
+    <div class="dropdown-item" onclick="openWallpaperPicker()">Change Wallpaper...</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="toggleLaunchpad()">Launchpad</div>
+  </div>
+
+  <!-- macOS Control Center Panel -->
+  <div class="control-center-panel" id="control-center">
+    <div class="cc-card">
+      <div class="cc-row">
+        <div class="cc-tile active">📶 Wi-Fi</div>
+        <div class="cc-tile active">⚡ Bluetooth</div>
+      </div>
+      <div class="cc-slider-group">
+        <label>☀️ Display Brightness</label>
+        <input type="range" min="1" max="100" value="80">
+      </div>
+      <div class="cc-slider-group">
+        <label>🔊 Sound Volume</label>
+        <input type="range" min="1" max="100" value="70">
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop Icons Grid -->
+  <div class="macos-desktop" id="desktop">
+    <div class="desktop-files-grid" id="desktop-files-grid">
+      <!-- Rendered by app.js -->
+    </div>
+  </div>
+
+  <!-- Fullscreen macOS Launchpad Overlay -->
+  <div class="macos-launchpad" id="launchpad-modal">
+    <div class="launchpad-search">
+      <span>🔍</span>
+      <input type="text" id="launchpad-search-input" placeholder="Search Launchpad..." autocomplete="off">
+    </div>
+    <div class="launchpad-grid" id="launchpad-grid">
+      <!-- Rendered by app.js -->
+    </div>
+  </div>
+
+  <!-- App Info Context Modal -->
+  <div class="modal-overlay" id="app-modal">
+    <div class="mac-dialog-card">
+      <div class="dialog-header">
+        <h3 id="app-modal-title">App Info</h3>
+        <button class="mac-close-btn" onclick="closeAppModal()">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div id="app-modal-icon" class="dialog-icon-container"></div>
+        <p id="app-modal-pkg" class="dialog-pkg-name"></p>
+        <div class="dialog-actions">
+          <button class="mac-btn primary" id="btn-launch-modal">🚀 Open App</button>
+          <button class="mac-btn secondary" id="btn-info-modal">ℹ️ Settings</button>
+          <button class="mac-btn danger" id="btn-uninstall-modal">🗑️ Uninstall</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- macOS Glassmorphic Floating Bottom Dock -->
+  <div class="macos-dock-container">
+    <div class="macos-dock" id="dock-bar">
+      <div class="dock-item" title="Finder Desktop" onclick="closeLaunchpad()">
+        <div class="dock-icon">🎨</div>
+      </div>
+      <div class="dock-item" title="Launchpad All Apps" onclick="toggleLaunchpad()">
+        <div class="dock-icon">🚀</div>
+      </div>
+      <div class="dock-item" title="Chrome Browser" onclick="launchChrome()">
+        <div class="dock-icon">🌐</div>
+      </div>
+      <div class="dock-item" title="Termux AI" onclick="launchTermux()">
+        <div class="dock-icon">⚡</div>
+      </div>
+      <div class="dock-item" title="System Settings" onclick="openSystemSettings()">
+        <div class="dock-icon">⚙️</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
