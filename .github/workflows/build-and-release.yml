@@ -1,0 +1,72 @@
+name: macOS Sonoma Android Launcher CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    name: Test & Build Flutter App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Analyze Project
+        run: flutter analyze
+
+      - name: Run Widget & Unit Tests
+        run: flutter test
+
+      - name: Build Web Bundle
+        run: flutter build web --release --base-href "/macos-sonoma-launcher-android/"
+
+      - name: Build Android Release APK
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-sonoma-launcher-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || 'v1.1.0' }}
+          name: "macOS Sonoma Launcher ${{ github.ref_name || 'v1.1.0' }}"
+          files: build/app/outputs/flutter-apk/app-release.apk
+          body: |
+            ###  macOS Sonoma Launcher for Android
+            Pure Flutter 3.x desktop simulation environment for Android and Web.
+
+            - **Top Menu Bar**: Interactive Apple  menu, active app title, live clock, status icons.
+            - **Interactive Dock**: Bouncing hover effects, running indicator dots, and quick app switcher.
+            - **Control Center**: Wi-Fi, Bluetooth, AirDrop, Dark Mode, Display & Sound sliders.
+            - **Finder & Desktop**: Glassmorphic widgets, desktop storage icons, and multi-folder Finder browser.
+            - **About This Mac**: Sonoma specification dialog with M3 Max profile and hardware telemetry.
